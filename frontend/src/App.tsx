@@ -388,7 +388,9 @@ function MissionConfig() {
               <b>
                 {status?.policy?.available
                   ? "PRETRAINED PPO"
-                  : "INITIALIZING PPO"}
+                  : online
+                    ? "STAGED ARES GUIDANCE"
+                    : "INITIALIZING GUIDANCE"}
               </b>
               <p>
                 {online
@@ -788,8 +790,8 @@ function MissionControl() {
         {inspector && (
           <div className="inspector">
             <span>GUIDANCE</span>
-            <b>PPO / STAGED GUIDANCE</b>
-            <small>Normalized deterministic inference</small>
+            <b>ARES GUIDANCE CONTROLLER</b>
+            <small>Python dynamics · staged deployment control</small>
             <hr />
             <span>OBSERVATION</span>
             <p>ALT {num(f.altitude_m)} M</p>

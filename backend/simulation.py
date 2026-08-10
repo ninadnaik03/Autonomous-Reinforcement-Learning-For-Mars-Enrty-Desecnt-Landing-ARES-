@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 import math
+import os
 import uuid
 
 import numpy as np
@@ -34,12 +35,22 @@ STATS_CANDIDATES = [
 def policy_status() -> dict:
     model = next((p for p in MODEL_CANDIDATES if p.exists()), None)
     stats = next((p for p in STATS_CANDIDATES if p.exists()), None)
+    disabled = os.getenv("ARES_DISABLE_PPO", "0") == "1"
+    available = bool(model and stats) and not disabled
     return {
-        "available": bool(model and stats),
-        "mode": "ppo" if model and stats else "deterministic_fallback",
+        "available": available,
+        "mode": "ppo" if available else "deterministic_fallback",
         "model": model.name if model else None,
         "normalization": stats.name if stats else None,
-        "reason": None if model and stats else "No trained PPO checkpoint and matching VecNormalize statistics are committed.",
+        "reason": (
+            None
+            if available
+            else (
+                "PPO is disabled on this memory-limited deployment; using the real staged ARES guidance controller."
+                if disabled
+                else "No trained PPO checkpoint and matching VecNormalize statistics are committed."
+            )
+        ),
     }
 
 
