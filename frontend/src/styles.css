@@ -726,10 +726,45 @@ footer {
   position: relative;
   min-width: 0;
 }
-.viewport canvas {
-  position: absolute !important;
+.mission-viz {
+  position: absolute;
   inset: 0;
+  overflow: hidden;
+  background: #030202;
 }
+.mission-viz svg { width: 100%; height: 100%; display: block; }
+.stars circle { fill: #d8c4b9; opacity: .54; }
+.altitude-grid line, .surface-scale line { stroke: rgba(201, 122, 91, .15); stroke-width: 1; stroke-dasharray: 5 8; }
+.altitude-grid text, .surface-scale text, .profile-readout text { fill: #806d64; font: 9px JetBrains Mono; letter-spacing: .08em; }
+.density-label { fill: #9b4e3c !important; }
+.trajectory-path { fill: none; stroke: #f15a3c; stroke-width: 2; opacity: .8; filter: url(#glow); }
+.horizon-glow { fill: none; stroke: #e34b2d; stroke-width: 22; opacity: .18; filter: url(#soft); }
+.surface { stroke: #e45738; stroke-width: 2; }
+.terrain-detail { fill: none; stroke: rgba(247, 126, 85, .2); stroke-width: 2; }
+.terrain-detail ellipse { fill: rgba(21, 5, 3, .35); }
+.target { fill: none; stroke: #ff7658; stroke-width: 2; filter: url(#glow); }
+.target text { fill: #ff8a6d; stroke: none; font: 9px JetBrains Mono; text-anchor: middle; letter-spacing: .12em; }
+.capsule-shell { fill: #c2afa4; stroke: #fff0e7; stroke-width: 2; }
+.capsule-detail { fill: none; stroke: #594039; stroke-width: 2; }
+.heatshield { fill: none; stroke: #ff6b37; stroke-width: 7; }
+.plasma { fill: #ff4b1d; opacity: .54; filter: url(#soft); }
+.canopy { fill: rgba(196, 149, 119, .18); stroke: #e9b28d; stroke-width: 3; }
+.chute-lines { fill: none; stroke: #ba8a70; stroke-width: 1.5; }
+.lander-body { fill: #b8a69b; stroke: #f1dbce; stroke-width: 2; }
+.lander-top, .lander-legs { fill: none; stroke: #cab9ae; stroke-width: 5; stroke-linecap: round; }
+.lander-port { fill: #24130e; stroke: #eb7c55; stroke-width: 1; }
+.thrusters path { fill: #ff7b30; filter: url(#glow); }
+.dust { fill: #b85d3b; opacity: .55; filter: url(#soft); }
+.velocity-vector, .force-vectors { fill: none; stroke: #ffb16e; stroke-width: 3; }
+.velocity-vector text, .force-vectors text { fill: #ffc091; stroke: none; font: 12px JetBrains Mono; }
+.force-vectors { stroke: #7cd0aa; }
+.force-vectors text { fill: #8fd9b8; }
+.phase-caption { position: absolute; right: 22px; bottom: 18px; text-align: right; pointer-events: none; }
+.phase-caption span, .phase-caption b { display: block; font-size: 8px; }
+.phase-caption span { color: #786861; }
+.phase-caption b { color: #ee684a; margin-top: 6px; text-transform: uppercase; letter-spacing: .14em; }
+.surface-view .surface { d: path("M -30 570 Q 500 545 1030 570 L 1030 680 L -30 680 Z"); }
+.surface-view .horizon-glow { d: path("M -30 560 Q 500 535 1030 560"); }
 .view-label {
   position: absolute;
   top: 18px;
@@ -1142,3 +1177,12 @@ footer {
     display: none;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .viz-capsule.hot { animation: capsule-shiver .18s ease-in-out infinite alternate; }
+  .thrusters { animation: thrust-pulse .12s ease-in-out infinite alternate; transform-origin: center 20px; }
+  .dust { animation: dust-spread .8s ease-out both; }
+}
+@keyframes capsule-shiver { to { transform: translateY(1px); } }
+@keyframes thrust-pulse { to { transform: scaleY(.82); } }
+@keyframes dust-spread { from { opacity: 0; transform: scaleX(.3); } }

@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stars } from "@react-three/drei";
 import {
   AreaChart,
   Area,
@@ -32,8 +30,8 @@ import {
   ShieldCheck,
   Wind,
 } from "lucide-react";
-import * as THREE from "three";
 import type { Telemetry, Report, Phase } from "./types";
+import MissionViz from "./MissionViz";
 
 const API = import.meta.env.VITE_API_URL || "";
 const PHASES: Phase[] = [
@@ -437,6 +435,7 @@ function Field({
   );
 }
 
+/*
 function Vehicle({ frame, layers }: { frame: Telemetry; layers: any }) {
   const ref = useRef<THREE.Group>(null);
   useFrame((s) => {
@@ -633,6 +632,7 @@ function MarsScene({ frame, layers }: { frame: Telemetry; layers: any }) {
     </Canvas>
   );
 }
+*/
 const EMPTY: Telemetry = {
   mission_time: 0,
   phase: "entry",
@@ -742,7 +742,7 @@ function MissionControl() {
         </div>
       </aside>
       <section className="viewport">
-        <MarsScene frame={f} layers={layers} />
+        <MissionViz frame={f} history={data.slice(0, index + 1)} layers={layers} />
         <div className="view-label">
           <span>CAM / AUTO</span>
           <b>{phaseName(f.phase)} VIEW</b>
