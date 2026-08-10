@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -40,7 +41,9 @@ async def create_mission(config: MissionConfig):
         record.status = "running"
         try:
             loop = asyncio.get_running_loop()
-            telemetry, report = await loop.run_in_executor(executor, run_mission, config)
+            telemetry, report = await loop.run_in_executor(
+                executor, partial(run_mission, config, record.telemetry.append)
+            )
             record.telemetry = telemetry
             record.report = report
             record.status = "completed"

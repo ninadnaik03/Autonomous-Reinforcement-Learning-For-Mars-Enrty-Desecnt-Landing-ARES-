@@ -440,7 +440,7 @@ function Vehicle({ frame, layers }: { frame: Telemetry; layers: any }) {
   useFrame((s) => {
     if (ref.current) ref.current.rotation.y = s.clock.elapsedTime * 0.18;
   });
-  const y = Math.max(1, Math.min(24, frame.altitude_m / 5000));
+  const y = 4.5 + Math.max(0.6, Math.min(14, frame.altitude_m / 8200));
   return (
     <group
       ref={ref}
@@ -461,16 +461,71 @@ function Vehicle({ frame, layers }: { frame: Telemetry; layers: any }) {
           </mesh>
         </>
       )}
-      {frame.phase !== "parachute" && (
-        <mesh>
-          <coneGeometry args={[0.75, 1.5, 32]} />
-          <meshStandardMaterial
-            color={frame.phase === "entry" ? "#ff6b29" : "#a9a29a"}
-            emissive={frame.phase === "entry" ? "#8b1e00" : "#000"}
-            emissiveIntensity={2}
-          />
-        </mesh>
-      )}
+      {frame.phase !== "parachute" &&
+        (["entry", "guided_entry"].includes(frame.phase) ? (
+          <group rotation={[0, 0, Math.PI]}>
+            <mesh>
+              <coneGeometry args={[1.05, 1.45, 48]} />
+              <meshStandardMaterial
+                color="#b7aaa0"
+                metalness={0.75}
+                roughness={0.28}
+              />
+            </mesh>
+            <mesh position={[0, -0.72, 0]} scale={[1, 0.18, 1]}>
+              <sphereGeometry args={[1.08, 48, 20]} />
+              <meshStandardMaterial color="#281813" roughness={0.9} />
+            </mesh>
+            <mesh position={[0, -0.8, 0]}>
+              <torusGeometry args={[0.9, 0.09, 12, 48]} />
+              <meshBasicMaterial color="#ff6a2d" />
+            </mesh>
+          </group>
+        ) : (
+          <group>
+            <mesh position={[0, 0.25, 0]}>
+              <cylinderGeometry args={[0.72, 0.9, 1.25, 8]} />
+              <meshStandardMaterial
+                color="#b7aaa0"
+                metalness={0.82}
+                roughness={0.25}
+              />
+            </mesh>
+            <mesh position={[0, 1.1, 0]}>
+              <cylinderGeometry args={[0.32, 0.5, 0.52, 12]} />
+              <meshStandardMaterial color="#ddd0c4" metalness={0.7} />
+            </mesh>
+            <mesh position={[0, 1.75, 0]} rotation={[0.2, 0, 0]}>
+              <cylinderGeometry args={[0.025, 0.025, 0.9, 8]} />
+              <meshStandardMaterial color="#d4cbc3" metalness={1} />
+            </mesh>
+            <mesh position={[0, 2.18, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.3, 0.3, 0.05, 24]} />
+              <meshStandardMaterial color="#c7bbb0" metalness={0.9} />
+            </mesh>
+            {[
+              [-0.72, -0.15, 0.72, -0.48],
+              [0.72, -0.15, 0.72, 0.48],
+              [-0.72, -0.15, -0.72, -0.48],
+              [0.72, -0.15, -0.72, 0.48],
+            ].map((p, i) => (
+              <group
+                key={`leg-${i}`}
+                position={[p[0], p[1], p[2]]}
+                rotation={[0, 0, p[3]]}
+              >
+                <mesh position={[0, -0.7, 0]}>
+                  <cylinderGeometry args={[0.045, 0.045, 1.45, 8]} />
+                  <meshStandardMaterial color="#a99e96" metalness={0.9} />
+                </mesh>
+                <mesh position={[0, -1.42, 0]} scale={[1.8, 0.22, 1.8]}>
+                  <cylinderGeometry args={[0.18, 0.28, 0.12, 16]} />
+                  <meshStandardMaterial color="#756a63" metalness={0.7} />
+                </mesh>
+              </group>
+            ))}
+          </group>
+        ))}
       {frame.action.applied_throttle > 0 && (
         <mesh position={[0, -1, 0]} rotation={[Math.PI, 0, 0]}>
           <coneGeometry
@@ -498,18 +553,18 @@ function Vehicle({ frame, layers }: { frame: Telemetry; layers: any }) {
 }
 function MarsScene({ frame, layers }: { frame: Telemetry; layers: any }) {
   return (
-    <Canvas camera={{ position: [0, 10, 28], fov: 48 }}>
+    <Canvas camera={{ position: [28, 15, 44], fov: 44, near: 0.1, far: 240 }}>
       <color attach="background" args={["#040302"]} />
-      <fog attach="fog" args={["#090503", 22, 48]} />
+      <fog attach="fog" args={["#090503", 55, 130]} />
       <ambientLight intensity={0.45} />
       <directionalLight position={[8, 18, 8]} color="#ffab72" intensity={3} />
       <Stars radius={90} depth={40} count={800} factor={2} />
-      <mesh position={[0, -3, 0]}>
+      <mesh position={[0, -14, 0]}>
         <sphereGeometry args={[18, 64, 32]} />
         <meshStandardMaterial color="#6f2315" roughness={1} />
       </mesh>
       {layers.atmosphere && (
-        <mesh position={[0, -3, 0]}>
+        <mesh position={[0, -14, 0]}>
           <sphereGeometry args={[18.35, 64, 32]} />
           <meshBasicMaterial
             color="#e94b1b"
@@ -521,12 +576,22 @@ function MarsScene({ frame, layers }: { frame: Telemetry; layers: any }) {
       )}
       <Vehicle frame={frame} layers={layers} />
       {layers.target && (
-        <mesh position={[0, 14.96, 9.7]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 4.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.35, 0.48, 32]} />
           <meshBasicMaterial color="#ff4c32" />
         </mesh>
       )}
-      <OrbitControls enablePan={false} minDistance={18} maxDistance={42} />
+      <OrbitControls
+        makeDefault
+        target={[0, 5, 0]}
+        enablePan
+        enableZoom
+        enableRotate
+        minDistance={10}
+        maxDistance={110}
+        minPolarAngle={0.15}
+        maxPolarAngle={Math.PI - 0.15}
+      />
     </Canvas>
   );
 }
