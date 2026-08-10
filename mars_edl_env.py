@@ -13,8 +13,10 @@ FULL_CHUTE_AREA = CHUTE_AREA
 class MarsDeepSpaceEnv(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self):
+    def __init__(self, mission_config=None):
         super().__init__()
+
+        self.mission_config = mission_config or {}
 
         self.observation_space = spaces.Box(
             low=-5.0, high=5.0, shape=(8,), dtype=np.float32
@@ -29,21 +31,25 @@ class MarsDeepSpaceEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        self.h  = np.random.uniform(115_000.0, 120_000.0)
-        self.v  = np.random.uniform(-1900.0, -1700.0)
-        self.x  = np.random.uniform(-3000.0, 3000.0)
-        self.vx = np.random.uniform(-50.0, 50.0)
+        rng = self.np_random
+        self.h = float(self.mission_config.get("entry_altitude_m", rng.uniform(115_000.0, 120_000.0)))
+        self.v = float(self.mission_config.get("vertical_velocity_ms", rng.uniform(-1900.0, -1700.0)))
+        self.x = float(self.mission_config.get("downrange_m", rng.uniform(-3000.0, 3000.0)))
+        self.vx = float(self.mission_config.get("horizontal_velocity_ms", rng.uniform(-50.0, 50.0)))
 
         self.pitch = 0.0
         self.pitch_rate = 0.0
 
-        self.fuel = FUEL_MASS
-        self.wind = np.random.uniform(-20.0, 20.0)
+        self.fuel = float(self.mission_config.get("initial_fuel_kg", FUEL_MASS))
+        self.wind = float(self.mission_config.get("wind_ms", rng.uniform(-20.0, 20.0)))
 
         self.chute = 0.0
         self.chute_deployed = 0.0
 
         self.steps = 0
+        self.last_thrust = 0.0
+        self.last_tilt = 0.0
+        self.last_action = np.zeros(2, dtype=np.float32)
         return self._get_obs(), {}
 
     def _get_obs(self):
@@ -64,6 +70,7 @@ class MarsDeepSpaceEnv(gym.Env):
 
         thrust_cmd = np.clip((action[0] + 1.0) / 2.0, 0.0, 1.0)
         tilt_cmd = np.clip(action[1], -1.0, 1.0)
+        self.last_action = np.asarray(action, dtype=np.float32).copy()
 
         # ==================================================
         # GUIDANCE
@@ -133,6 +140,8 @@ class MarsDeepSpaceEnv(gym.Env):
                 self.vx *= 0.5
 
         self.chute_deployed = self.chute
+        self.last_thrust = float(thrust)
+        self.last_tilt = float(tilt)
         mass = DRY_MASS + self.fuel
 
         dx, dh, dvx, dv, dpitch, m_dot = edl_dynamics_2d(
