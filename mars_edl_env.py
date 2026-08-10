@@ -85,7 +85,7 @@ class MarsDeepSpaceEnv(gym.Env):
             area = ENTRY_AEROSHELL_AREA
 
         # ---------- REEFED CHUTE (60 → 40 km)
-        elif self.h > 40000.0:
+        elif self.h > 45000.0:
             self.chute = 0.5
             thrust = 0.0
             tilt = tilt_cmd * np.radians(15.0)
@@ -93,7 +93,7 @@ class MarsDeepSpaceEnv(gym.Env):
             area = REEF_CHUTE_AREA
 
         # ---------- FULL CHUTE (40 → 20 km)
-        elif self.h > 20000.0:
+        elif self.h > 30000.0:
             self.chute = 1.0
             thrust = 0.0
             tilt = tilt_cmd * np.radians(8.0)
@@ -127,10 +127,10 @@ class MarsDeepSpaceEnv(gym.Env):
             # ---------------------------
             if self.v < -1.5:
                 # Falling too fast → brake
-                thrust = mass * (MARS_GRAVITY - 0.42 * (target_v - self.v))
+                thrust = mass * (MARS_GRAVITY + 0.42 * (target_v - self.v))
             else:
                 # Near zero or upward → FORCE descent
-                thrust = mass * (MARS_GRAVITY - 0.42 * (target_v - self.v))
+                thrust = mass * (MARS_GRAVITY + 0.42 * (target_v - self.v))
 
             thrust = np.clip(thrust, 0.0, MAX_THRUST)
 

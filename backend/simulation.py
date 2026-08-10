@@ -59,7 +59,7 @@ def phase_for(env: MarsDeepSpaceEnv) -> str:
         return "touchdown"
     if env.h <= 500:
         return "final_approach"
-    if env.h <= 20_000:
+    if env.h <= 30_000:
         return "powered_descent"
     if env.chute_deployed > 0:
         return "parachute"
@@ -75,7 +75,7 @@ def _aero_forces(env: MarsDeepSpaceEnv) -> tuple[float, float, float]:
         area = ENTRY_AEROSHELL_AREA
     elif env.h > 40_000:
         area = 0.6 * CHUTE_AREA
-    elif env.h > 20_000:
+    elif env.h > 30_000:
         area = CHUTE_AREA
     else:
         area = REFERENCE_AREA
