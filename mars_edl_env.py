@@ -105,7 +105,20 @@ class MarsDeepSpaceEnv(gym.Env):
         # ==================================================
         else:
             self.chute = 0.0
-            target_v = -2.0
+            if self.h > 8_000.0:
+                target_v = -180.0
+            elif self.h > 3_000.0:
+                target_v = -95.0
+            elif self.h > 1_000.0:
+                target_v = -48.0
+            elif self.h > 300.0:
+                target_v = -24.0
+            elif self.h > 80.0:
+                target_v = -11.0
+            elif self.h > 20.0:
+                target_v = -5.0
+            else:
+                target_v = -2.0
 
             mass = DRY_MASS + self.fuel
 
@@ -114,10 +127,10 @@ class MarsDeepSpaceEnv(gym.Env):
             # ---------------------------
             if self.v < -1.5:
                 # Falling too fast → brake
-                thrust = mass * (MARS_GRAVITY + 0.8 * abs(self.v))
+                thrust = mass * (MARS_GRAVITY - 0.42 * (target_v - self.v))
             else:
                 # Near zero or upward → FORCE descent
-                thrust = mass * (MARS_GRAVITY - 0.6)
+                thrust = mass * (MARS_GRAVITY - 0.42 * (target_v - self.v))
 
             thrust = np.clip(thrust, 0.0, MAX_THRUST)
 

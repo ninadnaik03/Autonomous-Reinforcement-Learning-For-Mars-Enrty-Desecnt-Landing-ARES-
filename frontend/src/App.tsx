@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import {
   AreaChart,
@@ -442,12 +442,19 @@ function Vehicle({ frame, layers }: { frame: Telemetry; layers: any }) {
   useFrame((s) => {
     if (ref.current) ref.current.rotation.y = s.clock.elapsedTime * 0.18;
   });
-  const y = 4.5 + Math.max(0.6, Math.min(14, frame.altitude_m / 8200));
+  const y = 4.62 + Math.max(0, Math.min(13.5, frame.altitude_m / 8500));
+  const vehicleScale =
+    frame.phase === "final_approach" || frame.phase === "touchdown"
+      ? 0.34
+      : frame.phase === "powered_descent"
+        ? 0.44
+        : 0.58;
   return (
     <group
       ref={ref}
       position={[Math.max(-7, Math.min(7, frame.downrange_m / 1000)), y, 0]}
       rotation={[frame.orientation.pitch, 0, frame.orientation.roll]}
+      scale={vehicleScale}
     >
       {frame.phase === "parachute" && (
         <>
@@ -553,6 +560,26 @@ function Vehicle({ frame, layers }: { frame: Telemetry; layers: any }) {
     </group>
   );
 }
+function CameraRig({ frame }: { frame: Telemetry }) {
+  const { camera } = useThree();
+  const lastPhase = useRef("");
+  useFrame(() => {
+    if (lastPhase.current === frame.phase) return;
+    lastPhase.current = frame.phase;
+    const positions: Record<string, [number, number, number]> = {
+      entry: [31, 18, 52],
+      guided_entry: [27, 16, 44],
+      parachute: [22, 14, 35],
+      powered_descent: [15, 10, 24],
+      final_approach: [6.5, 7, 10],
+      touchdown: [4.5, 5.9, 7],
+    };
+    camera.position.set(...positions[frame.phase]);
+    camera.lookAt(0, 5, 0);
+    camera.updateProjectionMatrix();
+  });
+  return null;
+}
 function MarsScene({ frame, layers }: { frame: Telemetry; layers: any }) {
   return (
     <Canvas camera={{ position: [28, 15, 44], fov: 44, near: 0.1, far: 240 }}>
@@ -561,6 +588,7 @@ function MarsScene({ frame, layers }: { frame: Telemetry; layers: any }) {
       <ambientLight intensity={0.45} />
       <directionalLight position={[8, 18, 8]} color="#ffab72" intensity={3} />
       <Stars radius={90} depth={40} count={800} factor={2} />
+      <CameraRig frame={frame} />
       <mesh position={[0, -14, 0]}>
         <sphereGeometry args={[18, 64, 32]} />
         <meshStandardMaterial color="#6f2315" roughness={1} />
@@ -583,14 +611,22 @@ function MarsScene({ frame, layers }: { frame: Telemetry; layers: any }) {
           <meshBasicMaterial color="#ff4c32" />
         </mesh>
       )}
+      <mesh position={[0, 4.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[7.5, 64]} />
+        <meshStandardMaterial color="#7b2617" roughness={1} />
+      </mesh>
+      <gridHelper
+        args={[14, 28, 0xb74b31, 0x4c2119]}
+        position={[0, 4.055, 0]}
+      />
       <OrbitControls
         makeDefault
         target={[0, 5, 0]}
         enablePan
         enableZoom
         enableRotate
-        minDistance={10}
-        maxDistance={110}
+        minDistance={1.8}
+        maxDistance={160}
         minPolarAngle={0.15}
         maxPolarAngle={Math.PI - 0.15}
       />
