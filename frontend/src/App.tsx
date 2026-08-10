@@ -67,6 +67,13 @@ function Header() {
   return (
     <header>
       <Mark />
+      <div className="nasa-badge" title="Independent project inspired by NASA missions">
+        <img src="/nasa-logo.png" alt="NASA" />
+        <span>
+          <b>INSPIRED BY NASA MISSIONS</b>
+          <small>INDEPENDENT · NOT AFFILIATED</small>
+        </span>
+      </div>
       <nav>
         <Link to="/">HOME</Link>
         <Link to="/mission">MISSION CONTROL</Link>
@@ -239,17 +246,30 @@ function MissionConfig() {
   const [armed, setArmed] = useState(false);
   const [status, setStatus] = useState<any>(null);
   const [busy, setBusy] = useState(false);
+  const [bootSeconds, setBootSeconds] = useState(60);
   useEffect(() => {
-    fetch(`${API}/api/system/status`)
-      .then((r) => r.json())
-      .then(setStatus)
-      .catch(() =>
-        setStatus({
-          simulation: "offline",
-          policy: { mode: "deterministic_fallback", available: false },
-        }),
-      );
+    let active = true;
+    const checkSystems = () =>
+      fetch(`${API}/api/system/status`)
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
+        .then((data) => active && setStatus(data))
+        .catch(() => active && setStatus(null));
+    checkSystems();
+    const poll = window.setInterval(checkSystems, 5000);
+    const countdown = window.setInterval(
+      () => setBootSeconds((seconds) => (seconds > 0 ? seconds - 1 : 0)),
+      1000,
+    );
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      window.clearInterval(countdown);
+    };
   }, []);
+  const online = status?.simulation === "ready";
   async function begin() {
     setBusy(true);
     try {
@@ -330,6 +350,24 @@ function MissionConfig() {
           </section>
           <aside className="checks panel">
             <h3>SYSTEM CHECKS</h3>
+            {!online && (
+              <div className="boot-sequence">
+                <span>ARES SYSTEM STARTUP</span>
+                <b>
+                  {bootSeconds > 0
+                    ? `T-${bootSeconds.toString().padStart(2, "0")}`
+                    : "STILL CONNECTING"}
+                </b>
+                <div>
+                  <i
+                    style={{
+                      width: `${Math.max(5, ((60 - bootSeconds) / 60) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <small>Booting guidance, dynamics and telemetry systems…</small>
+              </div>
+            )}
             {[
               ["ENV", "Simulation environment", status?.simulation === "ready"],
               ["ATM", "Atmospheric model", status?.atmosphere === "ready"],
@@ -337,12 +375,12 @@ function MissionConfig() {
               ["TLM", "Telemetry service", status?.telemetry === "ready"],
             ].map((x) => (
               <div className="check" key={String(x[0])}>
-                <i className={x[2] ? "ok" : "bad"} />
+                <i className={x[2] ? "ok" : "booting"} />
                 <span>
                   <b>{x[0]}</b>
                   {x[1]}
                 </span>
-                <strong>{x[2] ? "READY" : "OFFLINE"}</strong>
+                <strong>{x[2] ? "ONLINE" : "BOOTING"}</strong>
               </div>
             ))}
             <div className="policy-warning">
@@ -350,11 +388,12 @@ function MissionConfig() {
               <b>
                 {status?.policy?.available
                   ? "PRETRAINED PPO"
-                  : "DETERMINISTIC FALLBACK"}
+                  : "INITIALIZING PPO"}
               </b>
               <p>
-                {status?.policy?.reason ||
-                  "Checkpoint and normalization statistics loaded."}
+                {online
+                  ? "Checkpoint and normalization statistics loaded."
+                  : "Waiting for autonomous guidance service."}
               </p>
             </div>
             <button
@@ -365,7 +404,7 @@ function MissionConfig() {
             </button>
             <button
               className="primary wide"
-              disabled={!armed || busy || status?.simulation !== "ready"}
+              disabled={!armed || busy || !online}
               onClick={begin}
             >
               {busy ? "INITIALIZING…" : "BEGIN ENTRY"} <ArrowRight size={17} />
